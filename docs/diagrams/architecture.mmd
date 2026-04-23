@@ -1,0 +1,41 @@
+---
+title: Theme 10 - SuryaVayu AI Architecture
+---
+flowchart TB
+    subgraph Input["DATA INPUTS"]
+      SCADA["Plant SCADA / PPA Feed<br/>(historical + real-time MW)"]
+      WEATHER["Weather Forecast Feed<br/>(GHI · cloud · wind speed)"]
+    end
+    subgraph Forecast["FORECAST ENGINE"]
+      DIURNAL["Diurnal / Seasonal Profile<br/>(30-day baseline)"]
+      WX_ADJ["Weather Adjustment<br/>(cloud penalty · temp derate<br/>· wind power curve)"]
+      SCEN["Scenario Generator<br/>(BASE · OPTIMISTIC · PESSIMISTIC)"]
+      CI["Confidence Interval<br/>(horizon-aware)"]
+    end
+    subgraph Output["OPERATIONAL DASHBOARD"]
+      CHART["Forecast vs Actual Chart<br/>(3 scenarios · confidence band)"]
+      ACC["Accuracy Metrics<br/>(MAPE · RMSE · MBE)"]
+      ALERTS["Alerts Engine<br/>(ramp · curtailment · deviation)"]
+    end
+    subgraph Feedback["FEEDBACK LOOP"]
+      COMPARE["Forecast vs Actual Compare"]
+      RETRAIN["Model Retrain<br/>(version bump + MAPE improve)"]
+    end
+    SCADA --> DIURNAL
+    WEATHER --> WX_ADJ
+    DIURNAL --> WX_ADJ --> SCEN --> CI
+    CI --> CHART
+    CI --> ALERTS
+    SCADA --> COMPARE
+    CI --> COMPARE
+    COMPARE --> ACC
+    ACC --> RETRAIN
+    RETRAIN -.->|"improved baseline"| DIURNAL
+    classDef input fill:#ffedd5,stroke:#c2410c,color:#7c2d12
+    classDef forecast fill:#f97316,stroke:#c2410c,color:#fff
+    classDef output fill:#fff7ed,stroke:#c2410c,color:#7c2d12
+    classDef fb fill:#fdba74,stroke:#c2410c,color:#7c2d12
+    class SCADA,WEATHER input
+    class DIURNAL,WX_ADJ,SCEN,CI forecast
+    class CHART,ACC,ALERTS output
+    class COMPARE,RETRAIN fb

@@ -1,0 +1,107 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Plant {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  name           String
+  type           String
+  capacityMW     Float
+  lat            Float
+  lng            Float
+  district       String
+  status         String       @default("ACTIVE")
+  commissionedAt DateTime
+  readings       Generation[]
+  forecasts      Forecast[]
+  alerts         Alert[]
+  weather        WeatherReading[]
+  accuracy       ForecastAccuracy[]
+}
+
+model WeatherReading {
+  id            String   @id @default(cuid())
+  plantId       String
+  timestamp     DateTime
+  ghi           Float?
+  cloudCover    Float?
+  temperature   Float?
+  windSpeed     Float?
+  windDirection Float?
+  humidity      Float?
+  plant         Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@index([plantId, timestamp])
+}
+
+model Generation {
+  id          String   @id @default(cuid())
+  plantId     String
+  timestamp   DateTime
+  actualMW    Float
+  availableMW Float
+  curtailedMW Float    @default(0)
+  plant       Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@index([plantId, timestamp])
+}
+
+model Forecast {
+  id             String       @id @default(cuid())
+  plantId        String
+  issuedAt       DateTime     @default(now())
+  forHorizon     String
+  scenario       String       @default("BASE")
+  points         String
+  modelVersion   String
+  meanConfidence Float
+  notes          String?
+  plant          Plant        @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  accuracy       ForecastAccuracy[]
+
+  @@index([plantId, issuedAt])
+}
+
+model ForecastAccuracy {
+  id         String   @id @default(cuid())
+  forecastId String
+  plantId    String
+  computedAt DateTime @default(now())
+  mape       Float
+  rmse       Float
+  mbe        Float
+  sampleSize Int
+  notes      String?
+  forecast   Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  plant      Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@index([plantId, computedAt])
+}
+
+model Alert {
+  id           String        @id @default(cuid())
+  plantId      String?
+  type         String
+  severity     String
+  title        String
+  description  String
+  evidence     String
+  createdAt    DateTime      @default(now())
+  acknowledged Boolean       @default(false)
+  plant        Plant?        @relation(fields: [plantId], references: [id], onDelete: SetNull)
+}
+
+model ModelVersion {
+  id          String   @id @default(cuid())
+  versionTag  String   @unique
+  description String
+  trainedAt   DateTime @default(now())
+  overallMape Float
+  active      Boolean  @default(false)
+}
