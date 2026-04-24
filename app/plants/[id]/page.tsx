@@ -1,23 +1,6 @@
 import Link from "next/link";
-import {
-  AreaChart,
-  Badge,
-  BarChart,
-  Card,
-  LineChart,
-  Tab,
-  TabGroup,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-  Title,
-} from "@tremor/react";
+import { Badge, Card, Title } from "@tremor/react";
+import { PlantDetailTabs } from "@/components/plant-detail-tabs";
 import { db } from "@/lib/db";
 import { explainForecastVariance } from "@/lib/ai";
 import type { ForecastPoint } from "@/lib/types";
@@ -72,7 +55,11 @@ export default async function PlantDetailPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const data = await getPlantData(id);
   if (!data) {
-    return <Card><p>Plant not found.</p></Card>;
+    return (
+      <Card>
+        <p className="text-tremor-content">Plant not found.</p>
+      </Card>
+    );
   }
 
   const historyChart = data.generation.slice(-24 * 14).map((row) => ({
@@ -106,13 +93,13 @@ export default async function PlantDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="space-y-4">
-      <Link href="/plants" className="text-sm font-medium text-orange-700">
+      <Link href="/plants" className="text-sm font-medium text-orange-700 hover:text-orange-800">
         ← Back to plants
       </Link>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Title>{data.plant.name}</Title>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-tremor-content">
             {data.plant.code} · {data.plant.type} · {data.plant.capacityMW.toFixed(1)} MW · {data.plant.district}
           </p>
         </div>
@@ -121,159 +108,36 @@ export default async function PlantDetailPage({ params }: { params: Promise<{ id
         </Badge>
       </div>
 
-      <TabGroup>
-        <TabList variant="solid">
-          <Tab>Forecast</Tab>
-          <Tab>History</Tab>
-          <Tab>Weather</Tab>
-          <Tab>Accuracy</Tab>
-          <Tab>Alerts</Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel>
-            <div className="space-y-4 pt-4">
-              <Card>
-                <Title>Forecast scenarios with confidence band</Title>
-                <LineChart
-                  className="mt-4 h-80"
-                  data={forecastChart}
-                  index="time"
-                  categories={["Actual", "Base", "Optimistic", "Pessimistic", "Lower", "Upper"]}
-                  colors={["slate", "orange", "amber", "yellow", "gray", "gray"]}
-                />
-              </Card>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <p className="text-sm text-slate-500">Mean confidence</p>
-                  <p className="text-2xl font-semibold">{((data.base?.meanConfidence ?? 0) * 100).toFixed(0)}%</p>
-                  <p className="text-xs text-slate-500">Model: {data.base?.modelVersion ?? "sv-0.2"}</p>
-                </Card>
-                <Card>
-                  <p className="text-sm text-slate-500">Variance explanation (mock AI)</p>
-                  <p className="mt-1 text-sm">{data.explanation}</p>
-                </Card>
-              </div>
-            </div>
-          </TabPanel>
-
-          <TabPanel>
-            <div className="space-y-4 pt-4">
-              <Card>
-                <Title>Generation and curtailment history</Title>
-                <AreaChart className="mt-4 h-80" data={historyChart} index="time" categories={["Actual", "Curtailment"]} colors={["orange", "red"]} />
-              </Card>
-              <Card>
-                <Title>Daily energy trend</Title>
-                <BarChart
-                  className="mt-4 h-72"
-                  data={historyChart.filter((_, idx) => idx % 24 === 0)}
-                  index="time"
-                  categories={["Actual"]}
-                  colors={["amber"]}
-                />
-              </Card>
-            </div>
-          </TabPanel>
-
-          <TabPanel>
-            <div className="space-y-4 pt-4">
-              <Card>
-                <Title>Weather drivers</Title>
-                <LineChart
-                  className="mt-4 h-80"
-                  data={weatherChart}
-                  index="time"
-                  categories={data.plant.type === "SOLAR_PV" ? ["GHI", "Cloud", "Temp"] : ["Wind", "Cloud", "Temp"]}
-                  colors={["amber", "slate", "orange"]}
-                />
-              </Card>
-              <Card>
-                <p className="text-sm">
-                  Correlation note: output dips when cloud cover exceeds 70% or wind speed stays below cut-in threshold.
-                </p>
-              </Card>
-            </div>
-          </TabPanel>
-
-          <TabPanel>
-            <div className="space-y-4 pt-4">
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                  <p className="text-sm text-slate-500">MAPE (7d)</p>
-                  <p className="text-2xl font-semibold">{mape7.toFixed(2)}%</p>
-                </Card>
-                <Card>
-                  <p className="text-sm text-slate-500">RMSE (30 records)</p>
-                  <p className="text-2xl font-semibold">{rmse30.toFixed(2)}</p>
-                </Card>
-                <Card>
-                  <p className="text-sm text-slate-500">MBE (30 records)</p>
-                  <p className="text-2xl font-semibold">{mbe30.toFixed(2)}</p>
-                </Card>
-              </div>
-              <Card>
-                <Title>Daily MAPE trend</Title>
-                <BarChart
-                  className="mt-4 h-72"
-                  data={data.accuracy.map((a) => ({
-                    day: new Date(a.computedAt).toISOString().slice(5, 10),
-                    MAPE: a.mape,
-                  }))}
-                  index="day"
-                  categories={["MAPE"]}
-                  colors={["orange"]}
-                />
-              </Card>
-              <Card>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>Computed</TableHeaderCell>
-                      <TableHeaderCell>MAPE</TableHeaderCell>
-                      <TableHeaderCell>RMSE</TableHeaderCell>
-                      <TableHeaderCell>MBE</TableHeaderCell>
-                      <TableHeaderCell>Sample</TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {data.accuracy.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell>{new Date(a.computedAt).toLocaleString()}</TableCell>
-                        <TableCell>{a.mape.toFixed(2)}%</TableCell>
-                        <TableCell>{a.rmse.toFixed(2)}</TableCell>
-                        <TableCell>{a.mbe.toFixed(2)}</TableCell>
-                        <TableCell>{a.sampleSize}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-              <Card>
-                <p className="text-xs text-slate-500">30-day MAPE average: {mape30.toFixed(2)}%</p>
-              </Card>
-            </div>
-          </TabPanel>
-
-          <TabPanel>
-            <div className="space-y-3 pt-4">
-              {data.alerts.map((alert) => (
-                <Card key={alert.id}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{alert.title}</p>
-                      <p className="text-sm text-slate-600">{alert.description}</p>
-                      <p className="text-xs text-slate-500">
-                        {alert.type} · {new Date(alert.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <Badge color={alert.acknowledged ? "green" : "red"}>{alert.acknowledged ? "ACKED" : alert.severity}</Badge>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
+      <PlantDetailTabs
+        plantType={data.plant.type}
+        baseMeanConfidence={data.base?.meanConfidence ?? 0}
+        baseModelVersion={data.base?.modelVersion ?? "sv-0.2"}
+        explanation={data.explanation}
+        forecastChart={forecastChart}
+        historyChart={historyChart}
+        weatherChart={weatherChart}
+        mape7={mape7}
+        mape30={mape30}
+        rmse30={rmse30}
+        mbe30={mbe30}
+        accuracy={data.accuracy.map((a) => ({
+          id: a.id,
+          computedAt: a.computedAt.toISOString(),
+          mape: a.mape,
+          rmse: a.rmse,
+          mbe: a.mbe,
+          sampleSize: a.sampleSize,
+        }))}
+        alerts={data.alerts.map((a) => ({
+          id: a.id,
+          title: a.title,
+          description: a.description,
+          type: a.type,
+          severity: a.severity,
+          acknowledged: a.acknowledged,
+          createdAt: a.createdAt.toISOString(),
+        }))}
+      />
     </div>
   );
 }
