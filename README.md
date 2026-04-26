@@ -4,6 +4,13 @@ Day-ahead and intraday renewable generation forecasting for Karnataka's solar an
 
 > **PanIIT AI for Bharat Hackathon** - Theme 10: AI for Renewable Generation Forecasting
 
+
+## 🎥 Demo Video
+
+[![SuryaVayu AI — 5-min walkthrough](demo/video/poster.jpg)](demo/video/demo.mp4)
+
+> Voiceover by ElevenLabs (Alice, female). Pipeline reproducible — see `demo/video/`.
+
 ## Quick Start
 
 ```bash
