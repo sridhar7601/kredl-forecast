@@ -116,3 +116,34 @@ export function detectAccuracyAlerts(input: {
 
   return alerts;
 }
+
+export interface DriftInput {
+  plantId: string;
+  plantName: string;
+  mape7d: number;
+  mape30d: number;
+  threshold?: number; // default 1.5
+}
+
+export function detectModelDrift(input: DriftInput): AlertCandidate | null {
+  const threshold = input.threshold ?? 1.5;
+  if (input.mape30d <= 0) return null;
+  if (input.mape7d <= input.mape30d * threshold) return null;
+
+  const ratio = input.mape7d / input.mape30d;
+  const severity: AlertSeverity = ratio > 2 ? "HIGH" : "MEDIUM";
+  return {
+    plantId: input.plantId,
+    type: "MODEL_DRIFT",
+    severity,
+    title: `${input.plantName} model drift detected`,
+    description:
+      `Rolling 7-day MAPE (${input.mape7d.toFixed(2)}%) is ${ratio.toFixed(2)}× the 30-day average (${input.mape30d.toFixed(2)}%). Retrain recommended.`,
+    evidence: {
+      mape7d: input.mape7d,
+      mape30d: input.mape30d,
+      ratio: Number(ratio.toFixed(2)),
+      threshold,
+    },
+  };
+}

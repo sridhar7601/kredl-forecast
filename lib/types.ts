@@ -8,7 +8,8 @@ export type AlertType =
   | "CURTAILMENT_RISK"
   | "UNDER_FORECAST"
   | "OVER_FORECAST"
-  | "PLANT_OFFLINE";
+  | "PLANT_OFFLINE"
+  | "MODEL_DRIFT";
 export type AlertSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 
 export interface GenerationPoint {
@@ -33,6 +34,34 @@ export interface ForecastPoint {
   forecastMW: number;
   lowerBoundMW: number;
   upperBoundMW: number;
+}
+
+export interface AttributionPoint {
+  timestamp: Date;
+  baselineMW: number;
+  cloudPenaltyMW: number;
+  tempDeratingMW: number;
+  windFactorMW: number;
+  scenarioAdjustmentMW: number;
+  finalMW: number;
+}
+
+export interface BaselineComparison {
+  ourMape: number;
+  persistenceMape: number;
+  seasonalNaiveMape: number;
+  improvementVsPersistencePct: number;
+  improvementVsSeasonalNaivePct: number;
+  sampleSize: number;
+}
+
+export interface ClusterSummary {
+  id: string;
+  district: string;
+  type: PlantType;
+  plantCount: number;
+  totalCapacityMW: number;
+  plantIds: string[];
 }
 
 export interface ForecastInput {

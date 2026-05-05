@@ -9,8 +9,12 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed-demo.ts",
+    "seed:full": "npm run fetch-weather && npm run seed",
+    "fetch-weather": "tsx scripts/fetch-real-weather.ts",
+    "fetch-weather:force": "tsx scripts/fetch-real-weather.ts --force",
     "generate:plants": "tsx scripts/generate-mock-plants.ts",
-    "generate:timeseries": "tsx scripts/generate-mock-timeseries.ts"
+    "generate:timeseries": "tsx scripts/generate-timeseries.ts",
+    "generate:mock-timeseries": "tsx scripts/generate-mock-timeseries.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
